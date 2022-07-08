@@ -1,0 +1,41 @@
+{
+   "name": "i18nextension",
+   "displayName": "i18nExtension",
+   "version": "0.0.1",
+   "description": "Automatic i18n Extension",
+   "publisher": "Damien Arriens",
+   "engines": {
+      "vscode": "^1.22.0"
+   },
+   "categories": [
+      "Other"
+   ],
+   "activationEvents": [
+      "onCommand:extension.i18nExtension"
+   ],
+   "main": "./out/extension.js",
+   "contributes": {
+      "commands": [
+         {
+            "command": "extension.i18nExtension",
+            "title": "i18nExtension"
+         }
+      ]
+   },
+   "scripts": {
+      "vscode:prepublish": "npm run compile",
+      "compile": "tsc -p ./",
+      "lint": "eslint . --ext .ts,.tsx",
+      "watch": "tsc -watch -p ./"
+   },
+   "author": "Damien Arriens",
+   "license": "ISC",
+   "devDependencies": {
+      "@types/node": "^18.0.3",
+      "@types/vscode": "^1.68.1",
+      "@typescript-eslint/eslint-plugin": "^5.30.5",
+      "@typescript-eslint/parser": "^5.30.5",
+      "eslint": "^8.19.0",
+      "typescript": "^4.7.4"
+   }
+}
