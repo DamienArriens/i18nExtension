@@ -11,7 +11,7 @@
       "Other"
    ],
    "activationEvents": [
-      "onCommand:extension.i18nExtension"
+      "onStartupFinished"
    ],
    "main": "./out/extension.js",
    "contributes": {
@@ -19,6 +19,14 @@
          {
             "command": "extension.i18nExtension",
             "title": "i18nExtension"
+         },
+         {
+            "command": "extension.activated",
+            "title": "activated"
+         },
+         {
+            "command": "extension.onSave",
+            "title": "onSave"
          }
       ]
    },
