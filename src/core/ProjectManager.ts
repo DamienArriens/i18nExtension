@@ -6,11 +6,13 @@ import { Folder } from "./Folder";
 
 export class ProjectManager {
    public _rootFolder: Folder | undefined;
+   public _projectFolder!: Folder;
 
    constructor() {
       if (vscode.workspace.workspaceFolders !== undefined) {
          this._rootFolder = new Folder(vscode.workspace.workspaceFolders[0].name, null);
       } else {
+         vscode.window.showWarningMessage("No workspace found!");
          this._rootFolder = undefined;
       }
    }

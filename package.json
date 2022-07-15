@@ -1,14 +1,16 @@
 {
    "name": "i18nextension",
-   "displayName": "i18nExtension",
-   "version": "1.2",
+   "displayName": "Automatic i18n-Extension",
+   "version": "1.2.1",
    "description": "Automatic i18n Extension",
-   "publisher": "Damien Arriens",
+   "publisher": "DamienArriens",
    "engines": {
-      "vscode": "^1.22.0"
+      "vscode": "^1.69.1"
    },
    "categories": [
-      "Other"
+      "Formatters",
+      "Programming Languages",
+      "Snippets"
    ],
    "activationEvents": [
       "onStartupFinished"
@@ -39,6 +41,10 @@
    "author": {
       "name": "Damien Arriens",
       "email": "damien.arriens@swan.de"
+   },
+   "repository": {
+      "type": "github",
+      "url": "https://github.com/DamienArriens/i18nExtension"
    },
    "license": "ISC",
    "devDependencies": {
