@@ -2,16 +2,18 @@
 
 import * as vscode from "vscode";
 import * as fs from "fs";
-import { SWANProjectManager } from "./SWANProjectManager/SWANProjectManager";
-import { File } from "./SWANProjectManager/File";
-import { Folder } from "./SWANProjectManager/Folder";
+import { ProjectManager } from "./ProjectManager";
+import { File } from "./File";
+import { Folder } from "./Folder";
+import { Translator } from "../translators/Translator";
 
-export class i18nManager extends SWANProjectManager {
-   i18nKeys: string[];
-   i18nFile: File;
-   i18nFolder!: Folder;
-   webappFolder!: Folder;
-   textDocument!: File;
+export class i18nManager extends ProjectManager {
+   private i18nKeys: string[];
+   private i18nFile: File;
+   private i18nFolder!: Folder;
+   private webappFolder!: Folder;
+   private textDocument!: File;
+   private i18nManifest!: File;
 
    constructor() {
       super();
@@ -21,6 +23,7 @@ export class i18nManager extends SWANProjectManager {
 
    public extractI18nKeys(textDocument: vscode.TextDocument) {
       this.initiateTextDocument(textDocument);
+
       this.getI18nKeys();
       this.initiateFiles();
       this.appendKeys();
@@ -37,7 +40,7 @@ export class i18nManager extends SWANProjectManager {
    }
 
    private getI18nKeys() {
-      const i18nSnippets = this.textDocument.data.split("i18n>");
+      const i18nSnippets = this.textDocument.getData().split("i18n>");
       i18nSnippets.splice(0, 1);
       this.i18nKeys = i18nSnippets.map((snippet) => {
          return this.trimString(snippet, "}");
@@ -63,7 +66,7 @@ export class i18nManager extends SWANProjectManager {
    }
 
    private findWebappFolder() {
-      const pathArray = this.textDocument.path.split("/");
+      const pathArray = this.textDocument.getPath().split("/");
       if (pathArray[pathArray.length - 2] != "view") {
          pathArray.splice(pathArray.length - 1, 1);
       }
@@ -77,26 +80,25 @@ export class i18nManager extends SWANProjectManager {
 
    private createI18nFolder() {
       this.initiate18nFolderInstance();
-      if (this.i18nFolder.path) {
-         fs.stat(this.i18nFolder.path, (err, stats) => {
-            if (err && this.i18nFolder.path) {
-               fs.mkdir(this.i18nFolder.path, (err) => {
-                  if (err) {
-                     vscode.window.showErrorMessage(err.message);
-                  }
-               });
-            }
-         });
-      }
+
+      fs.stat(this.i18nFolder.getPath(), (err, stats) => {
+         if (err) {
+            fs.mkdir(this.i18nFolder.getPath(), (err) => {
+               if (err) {
+                  vscode.window.showErrorMessage(err.message);
+               }
+            });
+         }
+      });
    }
 
    private initiate18nFolderInstance() {
-      this.i18nFolder = new Folder(this.webappFolder.path + "/i18", this.webappFolder);
+      this.i18nFolder = new Folder(this.webappFolder.getPath() + "/i18n", this.webappFolder);
    }
 
    private getI18nProperties() {
-      this.i18nFile.path = this.i18nFolder.path + "/i18n.properties";
-      fs.stat(this.i18nFile.path, (err, stats) => {
+      this.i18nFile.setPath(this.i18nFolder.getPath() + "/i18n.properties");
+      fs.stat(this.i18nFile.getPath(), (err, stats) => {
          if (err) {
             this.createI18nProperties();
          }
@@ -104,7 +106,7 @@ export class i18nManager extends SWANProjectManager {
    }
 
    private createI18nProperties() {
-      fs.writeFile(this.i18nFile.path, "", (err) => {
+      fs.writeFile(this.i18nFile.getPath(), "", (err) => {
          if (err) {
             vscode.window.showErrorMessage(err.message);
          }
@@ -116,7 +118,7 @@ export class i18nManager extends SWANProjectManager {
 
       this.i18nKeys.forEach((key) => {
          fs.appendFile(
-            this.i18nFile.path,
+            this.i18nFile.getPath(),
             `\n${key}=${key.charAt(0).toUpperCase() + key.replace(/([A-Z])/g, " $1").slice(1)}`,
             (err) => {
                if (err) {
@@ -128,7 +130,7 @@ export class i18nManager extends SWANProjectManager {
    }
 
    private eliminateDuplicates() {
-      const fileData = this.readFileData(this.i18nFile.path);
+      const fileData = super.readFileData(this.i18nFile.getPath());
       const lines = this.splitInLines(fileData);
 
       const i18nFileKeys = this.extractKeys(lines);
@@ -140,10 +142,6 @@ export class i18nManager extends SWANProjectManager {
             }
          });
       });
-   }
-
-   private readFileData(path: string) {
-      return fs.readFileSync(path, "utf8");
    }
 
    private splitInLines(data: string) {
@@ -164,5 +162,40 @@ export class i18nManager extends SWANProjectManager {
       });
 
       return i18nFileKeys;
+   }
+
+   public translateI18nProperties() {
+      this.getI18nManifest();
+
+      const i18nTranslator = new Translator();
+      i18nTranslator.translate(this.i18nFile, this.i18nManifest);
+   }
+
+   private getI18nManifest() {
+      this.i18nManifest.setPath(this.i18nFolder.getPath() + "/i18n.json");
+      fs.stat(this.i18nFile.getPath(), (err, stats) => {
+         if (err) {
+            this.i18nManifest = new File(
+               "json",
+               0,
+               0,
+               "",
+               this.i18nFolder.getPath() + "/i18n.json"
+            );
+
+            this.i18nManifest.setData(
+               JSON.stringify({
+                  defaultLanguage: "en",
+                  languages: ["en"]
+               })
+            );
+
+            fs.writeFile(this.i18nManifest.getPath(), this.i18nManifest.getData(), (err) => {
+               if (err) {
+                  vscode.window.showErrorMessage(err.message);
+               }
+            });
+         }
+      });
    }
 }

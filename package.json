@@ -1,7 +1,7 @@
 {
    "name": "i18nextension",
    "displayName": "i18nExtension",
-   "version": "0.0.1",
+   "version": "1.2",
    "description": "Automatic i18n Extension",
    "publisher": "Damien Arriens",
    "engines": {
@@ -36,7 +36,10 @@
       "lint": "eslint . --ext .ts,.tsx",
       "watch": "tsc -watch -p ./"
    },
-   "author": "Damien Arriens",
+   "author": {
+      "name": "Damien Arriens",
+      "email": "damien.arriens@swan.de"
+   },
    "license": "ISC",
    "devDependencies": {
       "@types/node": "^18.0.3",
