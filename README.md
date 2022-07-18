@@ -11,5 +11,4 @@ All the values will be automatically translated to the languages you define in t
 
 Future features:
 
--  Implementing these translated i18n Files automatically
--  Create a view to manage these files easier
+-  Create a view to manage these files easier (Version 3)
