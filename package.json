@@ -52,8 +52,10 @@
       "@types/vscode": "^1.68.1",
       "@typescript-eslint/eslint-plugin": "^5.30.5",
       "@typescript-eslint/parser": "^5.30.5",
-      "deepl-node": "^1.3.1",
       "eslint": "^8.19.0",
       "typescript": "^4.7.4"
+   },
+   "dependencies": {
+      "deepl-node": "^1.3.1"
    }
 }
