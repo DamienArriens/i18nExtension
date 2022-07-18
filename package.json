@@ -1,7 +1,7 @@
 {
    "name": "i18nextension",
    "displayName": "Automatic i18n-Extension",
-   "version": "3.0.0",
+   "version": "1.2.2",
    "description": "Automatic i18n Extension",
    "publisher": "DamienArriens",
    "engines": {
