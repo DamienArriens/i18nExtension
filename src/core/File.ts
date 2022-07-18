@@ -1,5 +1,7 @@
 /** @format */
 
+import { ProjectManager } from "./ProjectManager";
+
 export class File {
    private name: string;
    private type: string;
@@ -19,9 +21,14 @@ export class File {
       this.characterCount = characterCount;
       this.lineCount = lineCount;
       this.data = data;
-      const pathList = path.split("/");
-      if (pathList.length > 1) pathList.splice(0, 1);
-      this.path = pathList.join("/");
+
+      if (path.charAt(0) === "/") {
+         const pathList = path.split("/");
+         pathList.splice(0, 1);
+         this.path = pathList.join("/");
+      } else {
+         this.path = path;
+      }
       this.name = this.path.split("/")[this.path.split("/").length - 1];
    }
 
@@ -42,6 +49,9 @@ export class File {
    }
 
    public getData(): string {
+      const projectManager = new ProjectManager();
+      this.data = projectManager.readFileData(this.path);
+      this.characterCount = this.data.length;
       return this.data;
    }
 
@@ -51,6 +61,7 @@ export class File {
 
    public setData(data: string): void {
       this.data = data;
+      this.characterCount = data.length;
    }
 
    public setPath(path: string): void {

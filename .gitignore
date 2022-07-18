@@ -1,6 +1,5 @@
 out
 node_modules
 .vscode-test
-/src/translators
 /src/modules.ts
 

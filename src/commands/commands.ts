@@ -1,7 +1,7 @@
 /** @format */
 
 import * as vscode from "vscode";
-import { i18nManager } from "../core/i18nManager";
+import { I18nManager } from "../core/i18nManager";
 
 const i18nExtension = vscode.commands.registerCommand("extension.i18nExtension", () => {
    vscode.commands.executeCommand("extension.activated");
@@ -9,15 +9,15 @@ const i18nExtension = vscode.commands.registerCommand("extension.i18nExtension",
 });
 
 vscode.commands.registerCommand("extension.activated", () => {
-   vscode.window.showInformationMessage("i18nExtension successfully activated!");
+   vscode.window.showInformationMessage("i18n-Extension successfully activated!");
 });
 
 vscode.commands.registerCommand("extension.onSave", () => {
    vscode.workspace.onDidSaveTextDocument((textDocument) => {
       if (textDocument.languageId === "xml") {
-         const I18nManager = new i18nManager();
-         I18nManager.extractI18nKeys(textDocument);
-         I18nManager.translateI18nProperties();
+         const I18nManagerInstance = new I18nManager();
+         const { i18nFile, i18nFolder } = I18nManagerInstance.extractI18nKeys(textDocument);
+         I18nManagerInstance.translateI18nProperties(i18nFile, i18nFolder);
       }
    });
 });

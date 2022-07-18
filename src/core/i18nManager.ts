@@ -7,30 +7,23 @@ import { File } from "./File";
 import { Folder } from "./Folder";
 import { Translator } from "../translators/Translator";
 
-export class i18nManager extends ProjectManager {
-   private i18nKeys: string[];
-   private i18nFile: File;
-   private i18nFolder!: Folder;
-   private webappFolder!: Folder;
-   private textDocument!: File;
-   private i18nManifest!: File;
-
+export class I18nManager extends ProjectManager {
    constructor() {
       super();
-      this.i18nKeys = [];
-      this.i18nFile = new File("properties", 0, 0, "", "i18n.properties");
    }
 
    public extractI18nKeys(textDocument: vscode.TextDocument) {
-      this.initiateTextDocument(textDocument);
+      const xmlDocument = this.initiateTextDocument(textDocument);
 
-      this.getI18nKeys();
-      this.initiateFiles();
-      this.appendKeys();
+      const i18nKeys = this.getI18nKeys(xmlDocument);
+      const { i18nFile, i18nFolder } = this.initiateFiles(xmlDocument);
+      this.appendKeys(i18nKeys, i18nFile);
+
+      return { i18nFile, i18nFolder };
    }
 
    private initiateTextDocument(textDocument: vscode.TextDocument) {
-      this.textDocument = new File(
+      return new File(
          textDocument.languageId,
          textDocument.getText().length,
          textDocument.lineCount,
@@ -39,86 +32,77 @@ export class i18nManager extends ProjectManager {
       );
    }
 
-   private getI18nKeys() {
-      const i18nSnippets = this.textDocument.getData().split("i18n>");
+   private getI18nKeys(textDocument: File) {
+      const i18nSnippets = textDocument.getData().split("i18n>");
       i18nSnippets.splice(0, 1);
-      this.i18nKeys = i18nSnippets.map((snippet) => {
+      const i18nKeys = i18nSnippets.map((snippet) => {
          return this.trimString(snippet, "}");
       });
 
-      this.createUniqueKeys();
+      return this.createUniqueValues(i18nKeys);
    }
 
-   private trimString(str: string, char: string) {
-      return str.substring(0, str.indexOf(char));
+   private initiateFiles(xmlDocument: File) {
+      const webappFolder = this.findWebappFolder(xmlDocument);
+      const i18nFolder = this.createI18nFolder(webappFolder);
+      const i18nFile = this.getI18nFile(i18nFolder);
+      return { i18nFile, i18nFolder };
    }
 
-   private createUniqueKeys() {
-      this.i18nKeys = this.i18nKeys.filter((key, index) => {
-         return this.i18nKeys.indexOf(key) === index;
-      });
-   }
-
-   private initiateFiles() {
-      this.findWebappFolder();
-      this.createI18nFolder();
-      this.getI18nProperties();
-   }
-
-   private findWebappFolder() {
-      const pathArray = this.textDocument.getPath().split("/");
+   private findWebappFolder(xmlDocument: File) {
+      const pathArray = xmlDocument.getPath().split("/");
       if (pathArray[pathArray.length - 2] != "view") {
          pathArray.splice(pathArray.length - 1, 1);
       }
       pathArray.splice(pathArray.length - 2, 2);
-      this.initiateWebappFolder(pathArray.join("/"));
+      return new Folder(pathArray.join("/"), null);
    }
 
-   private initiateWebappFolder(path: string) {
-      this.webappFolder = new Folder(path, null);
-   }
+   private createI18nFolder(webappFolder: Folder) {
+      const i18nFolder = this.initiate18nFolderInstance(webappFolder);
 
-   private createI18nFolder() {
-      this.initiate18nFolderInstance();
-
-      fs.stat(this.i18nFolder.getPath(), (err, stats) => {
+      fs.stat(i18nFolder.getPath(), (err, stats) => {
          if (err) {
-            fs.mkdir(this.i18nFolder.getPath(), (err) => {
+            fs.mkdir(i18nFolder.getPath(), (err) => {
                if (err) {
                   vscode.window.showErrorMessage(err.message);
                }
             });
          }
       });
+
+      return i18nFolder;
    }
 
-   private initiate18nFolderInstance() {
-      this.i18nFolder = new Folder(this.webappFolder.getPath() + "/i18n", this.webappFolder);
+   private initiate18nFolderInstance(webappFolder: Folder) {
+      return new Folder(webappFolder.getPath() + "/i18n", webappFolder);
    }
 
-   private getI18nProperties() {
-      this.i18nFile.setPath(this.i18nFolder.getPath() + "/i18n.properties");
-      fs.stat(this.i18nFile.getPath(), (err, stats) => {
+   private getI18nFile(i18nFolder: Folder) {
+      const i18nFile = new File("properties", 0, 0, "", i18nFolder.getPath() + "/i18n.properties");
+      fs.stat(i18nFile.getPath(), (err, stats) => {
          if (err) {
-            this.createI18nProperties();
+            this.createI18nFile(i18nFile);
          }
       });
+
+      return i18nFile;
    }
 
-   private createI18nProperties() {
-      fs.writeFile(this.i18nFile.getPath(), "", (err) => {
+   private createI18nFile(i18nFile: File) {
+      fs.writeFile(i18nFile.getPath(), "", (err) => {
          if (err) {
             vscode.window.showErrorMessage(err.message);
          }
       });
    }
 
-   private appendKeys() {
-      this.eliminateDuplicates();
+   private appendKeys(i18nKeys: string[], i18nFile: File) {
+      i18nKeys = this.eliminateDuplicates(i18nKeys, i18nFile);
 
-      this.i18nKeys.forEach((key) => {
+      i18nKeys.forEach((key) => {
          fs.appendFile(
-            this.i18nFile.getPath(),
+            i18nFile.getPath(),
             `\n${key}=${key.charAt(0).toUpperCase() + key.replace(/([A-Z])/g, " $1").slice(1)}`,
             (err) => {
                if (err) {
@@ -129,19 +113,21 @@ export class i18nManager extends ProjectManager {
       });
    }
 
-   private eliminateDuplicates() {
-      const fileData = super.readFileData(this.i18nFile.getPath());
+   private eliminateDuplicates(i18nKeys: string[], i18nFile: File) {
+      const fileData = i18nFile.getData();
       const lines = this.splitInLines(fileData);
 
       const i18nFileKeys = this.extractKeys(lines);
 
       i18nFileKeys.forEach((i18nFileKey) => {
-         this.i18nKeys.forEach((key) => {
+         i18nKeys.forEach((key) => {
             if (i18nFileKey === key) {
-               this.i18nKeys.splice(this.i18nKeys.indexOf(key), 1);
+               i18nKeys.splice(i18nKeys.indexOf(key), 1);
             }
          });
       });
+
+      return i18nKeys;
    }
 
    private splitInLines(data: string) {
@@ -164,38 +150,34 @@ export class i18nManager extends ProjectManager {
       return i18nFileKeys;
    }
 
-   public translateI18nProperties() {
-      this.getI18nManifest();
+   public translateI18nProperties(i18nFile: File, i18nFolder: Folder) {
+      const i18nManifest = this.getI18nManifest(i18nFolder);
 
       const i18nTranslator = new Translator();
-      i18nTranslator.translate(this.i18nFile, this.i18nManifest);
+      i18nTranslator.translate(i18nFile, i18nManifest);
    }
 
-   private getI18nManifest() {
-      this.i18nManifest.setPath(this.i18nFolder.getPath() + "/i18n.json");
-      fs.stat(this.i18nFile.getPath(), (err, stats) => {
+   private getI18nManifest(i18nFolder: Folder) {
+      const i18nManifest = new File("json", 0, 0, "", i18nFolder.getPath() + "/i18n.json");
+      fs.stat(i18nManifest.getPath(), (err, stats) => {
          if (err) {
-            this.i18nManifest = new File(
-               "json",
-               0,
-               0,
-               "",
-               this.i18nFolder.getPath() + "/i18n.json"
-            );
-
-            this.i18nManifest.setData(
+            i18nManifest.setData(
                JSON.stringify({
                   defaultLanguage: "en",
-                  languages: ["en"]
+                  languages: ["en-GB"]
                })
             );
 
-            fs.writeFile(this.i18nManifest.getPath(), this.i18nManifest.getData(), (err) => {
+            fs.writeFile(i18nManifest.getPath(), i18nManifest.getData(), (err) => {
                if (err) {
                   vscode.window.showErrorMessage(err.message);
                }
             });
          }
       });
+
+      i18nManifest.getData();
+
+      return i18nManifest;
    }
 }

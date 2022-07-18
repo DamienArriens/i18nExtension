@@ -28,7 +28,25 @@ export class ProjectManager {
       return fs.readFileSync(path, "utf8");
    }
 
+   public writeFileData(path: string, data: string) {
+      fs.appendFile(path, data, (err) => {
+         if (err) {
+            vscode.window.showErrorMessage(err.message);
+         }
+      });
+   }
+
    public readFile(path: string) {
       // TODO
+   }
+
+   public createUniqueValues(array: string[]) {
+      return array.filter((key, index) => {
+         return array.indexOf(key) === index;
+      });
+   }
+
+   public trimString(str: string, char: string) {
+      return str.substring(0, str.indexOf(char));
    }
 }
